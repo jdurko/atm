@@ -1,8 +1,8 @@
 To compile my code, type:  g++ -o ClientCNP ClientCNP.cpp
-g++ -o ServerCNP ServerCNP.cpp
+g++ -pthread  -o ServerCNP ServerCNP.cpp
 
 In fact both ClientCNP and ServerCNP are the the main file to compile 
-,and also require CNP_Protocol.h to be in the same file directory.
+,and also require CNP_Protocol.h, DataMap.h to be in the same file directory.
 
 To execute my code type:  ./ClientCNP for instance, and ./ServerCNP
 
