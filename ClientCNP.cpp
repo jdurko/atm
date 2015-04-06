@@ -12,8 +12,9 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #define BUF_SIZE	1024
-// #define	SERVER_IP	"129.120.151.98" // cse05
-#define SERVER_IP   "129.120.151.94" // cse05
+// #define	SERVER_IP	"129.120.151.98" // cse05    129.120.151.99
+//#define SERVER_IP   "129.120.151.94" // cse05
+#define SERVER_IP   "129.120.151.99"
 #define SERVER_PORT	8000
 
 int main(int argc, char *argv[]) {
@@ -53,7 +54,7 @@ int sock_send;
 	if(recv(sock_send,&connectres, connectres.get_Size(), 0)<0){
         //ERROR_CONNECT_RESPONSE
     }
-    printf(" response %lu\n", connectres.get_ResponseResult());
+   // printf(" response %lu\n", connectres.get_ResponseResult());
     //cnp::CONNECT_REQUEST connectreq;
     //selected= strtok(buf,delim);
    // while( selected != NULL )
@@ -63,7 +64,7 @@ int sock_send;
      // connectreq(strtok(NULL, buf));
   // }
   bool check=true;
-  while(check==true){
+  while(check==true){ //keep communicating wuth server
 printf("-----\n");// TODO CONNECT_RESPONSE header
 
 		printf("1 -> CREATE AN ACCOUNT\n");
@@ -105,8 +106,15 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			if (recv(sock_send, &accountRes, accountRes.get_Size(), 0)<0){
 				//TODO error CNP_MESSAGE
 			}
-			printf("Response:\n", accountRes.get_ResponseResult());
+			//printf("Response SUCCESS:\n", accountRes.get_ResponseResult());
+			//check=false;
+			if (accountRes.get_ResponseResult()==cnp::CER_SUCCESS){
 			check=false;
+			printf("Response SUCCESS:%lu\n", accountRes.get_ResponseResult());
+			connectres.m_Hdr.m_wClientID=accountRes.m_Hdr.get_ClientID();
+			}else{
+			printf("Response ERROR:%lu\n", accountRes.get_ResponseResult());
+			}
 		}
 
 			break;
@@ -116,11 +124,11 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			//cnp::LOGON_REQUEST logonreq;
 			//Receive a reply from server
 			cnp::LOGON_RESPONSE logonres;
-            char * szFirstName2;
-			printf("Enter First Name");
+            char * szFirstName2=new char[9];
+			printf("Enter First Name\n");
 			scanf("%s",  szFirstName2); // TODO First Name
 			cnp::WORD wPin2;
-			printf("Enter PIN number");
+			printf("Enter PIN number\n");
 			scanf("%hu",  &wPin2); //TODO PIN
 			cnp::LOGON_REQUEST logonreq(wClientID2,szFirstName2,wPin2,0);
 			cnp::DWORD msg2=logonreq.get_MsgType();
@@ -133,8 +141,14 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			if (recv(sock_send, &logonres,logonres.get_Size(), 0)<0){
 				//TODO error CNP_MESSAGE
 			}
-			printf("Response:", logonres.get_ResponseResult());
+
+			if (logonres.get_ResponseResult()==cnp::CER_SUCCESS){
 			check=false;
+			printf("Response SUCCESS:%lu\n", logonres.get_ResponseResult());
+			connectres.m_Hdr.m_wClientID=logonres.m_Hdr.get_ClientID();
+			}else{
+			printf("Response ERROR:%lu\n", logonres.get_ResponseResult());
+			}
 		}
 			break;
         default:
@@ -156,9 +170,9 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 		printf("8 -> REQUEST A TRANSACTION\n");
 		printf("---------------------\n");//TODO CONNECT_RESPONSE body
 		scanf("%d", &text); //answer by replying
-		printf("---TEXT %d \n",text);
+	//	printf("---TEXT %d \n",text);
 		switch (text){
-		case 1:{  // TODO CREATE_ACCOUNT_REQUEST
+	/*	case 1:{  // TODO CREATE_ACCOUNT_REQUEST
 			//cnp::CREATE_ACCOUNT_REQUEST accountreq;
 			//Receive a reply from server
 			cnp::CREATE_ACCOUNT_RESPONSE accountRes;
@@ -203,7 +217,7 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			//cnp::LOGON_REQUEST logonreq;
 			//Receive a reply from server
 			cnp::LOGON_RESPONSE logonres;
-            char * szFirstName2;
+            char * szFirstName2=new char[9];
 			printf("Enter First Name");
 			scanf("%s",  szFirstName2); // TODO First Name
 			cnp::WORD wPin2;
@@ -223,12 +237,13 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			printf("Response:", logonres.get_ResponseResult());
 		}
 			break;
+			*/
 		case 3:{ //TODO LOGOFF REQUEST
 			//cnp::LOGOFF_REQUEST logoffreq;
 			//Receive a reply from server
 			cnp::LOGOFF_RESPONSE logoffres;
 			//GetClientID
-			cnp::WORD wClientID3=connectres.get_ClientID();
+			cnp::WORD wClientID3=connectres.m_Hdr.m_wClientID;
 			cnp::LOGOFF_REQUEST logoffreq(wClientID3,0);
 			cnp::DWORD msg3=logoffreq.get_MsgType();
 			if (send(sock_send, &msg3, sizeof(msg3), 0) < 0){
@@ -240,7 +255,102 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			if (recv(sock_send, &logoffres, logoffres.get_Size(), 0)<0){
 				//TODO error CNP_MESSAGE
 			}
-			printf("Response:", logoffres.get_ResponseResult());
+			//printf("Response:", logoffres.get_ResponseResult());
+			if (logoffres.get_ResponseResult()==cnp::CER_SUCCESS){
+			printf("Response SUCCESS:%lu\n", logoffres.get_ResponseResult());
+			bool check1=true;
+  while(check1==true){
+printf("-----\n");// TODO CONNECT_RESPONSE header
+
+		printf("1 -> CREATE AN ACCOUNT\n");
+		printf("2 -> LOGIN INTO YOUR ACCOUNT\n");
+        scanf("%d", &text);
+		switch (text){
+		case 1:{  // TODO CREATE_ACCOUNT_REQUEST
+			//cnp::CREATE_ACCOUNT_REQUEST accountreq;
+			//Receive a reply from server
+			cnp::CREATE_ACCOUNT_RESPONSE accountRes;
+			//TODO GET ClinetID
+			cnp::WORD wClientID=connectres.m_Hdr.m_wClientID;
+            char * szFirstName=new char[9];
+			printf("Enter First Name\n");
+			scanf("%s",  szFirstName) ; // TODO First Name
+            char * szLastName=new char[12];
+			printf("Enter Last Name\n");
+			scanf("%s",  szLastName); // TODO Last Name
+            char * szEmailAddress=new char[15];
+			printf("Enter Email\n");
+			scanf("%s",  szEmailAddress); // TODO Email Address
+			cnp::WORD wPin;
+			printf("Enter PIN\n");
+			scanf("%hu", &wPin); // TODO PIN NUMBER
+			cnp::DWORD dwSSN;
+			printf("Enter #SSN\n");
+			scanf("%lu", &dwSSN); // TODO SOCIAL SECURITY
+			cnp::DWORD dwDLN;
+			printf("Enter #Driver Licence\n");
+			scanf("%lu", &dwDLN); // TODO Driver Licence
+			cnp::CREATE_ACCOUNT_REQUEST accountreq(wClientID,szFirstName,szLastName,szEmailAddress,wPin,dwSSN,dwDLN,0);
+			cnp::DWORD msgtype1=accountreq.get_MsgType();
+			if (send(sock_send, &msgtype1, sizeof(msgtype1), 0) < 0){
+				//TODO error  CNP_ACCONT_MESSAGE
+			}
+			if (send(sock_send, &accountreq, accountreq.get_Size(), 0) < 0){
+				//TODO error  CNP_ACCONT_MESSAGE
+			}
+			if (recv(sock_send, &accountRes, accountRes.get_Size(), 0)<0){
+				//TODO error CNP_MESSAGE
+			}
+			//printf("Response SUCCESS:\n", accountRes.get_ResponseResult());
+			//check=false;
+			if (accountRes.get_ResponseResult()==cnp::CER_SUCCESS){
+			check1=false;
+			printf("Response SUCCESS:%lu\n", accountRes.get_ResponseResult());
+			}else{
+			printf("Response ERROR:%lu\n", accountRes.get_ResponseResult());
+			}
+		}
+
+			break;
+		case 2:{ // TODO LOGON REQUEST
+		    //TODO getClientID
+		    cnp::WORD wClientID2=connectres.get_ClientID();
+			//cnp::LOGON_REQUEST logonreq;
+			//Receive a reply from server
+			cnp::LOGON_RESPONSE logonres;
+            char * szFirstName2=new char[9];
+			printf("Enter First Name\n");
+			scanf("%s",  szFirstName2); // TODO First Name
+			cnp::WORD wPin2;
+			printf("Enter PIN number\n");
+			scanf("%hu",  &wPin2); //TODO PIN
+			cnp::LOGON_REQUEST logonreq(wClientID2,szFirstName2,wPin2,0);
+			cnp::DWORD msg2=logonreq.get_MsgType();
+			if (send(sock_send, &msg2, sizeof(msg2), 0) < 0){
+				//TODO error  CNP_ACCONT_MESSAGE
+			}
+			if (send(sock_send, &logonreq, logonreq.get_Size(), 0) < 0){
+				//TODO error  CNP_ACCONT_MESSAGE
+			}
+			if (recv(sock_send, &logonres,logonres.get_Size(), 0)<0){
+				//TODO error CNP_MESSAGE
+			}
+
+			if (logonres.get_ResponseResult()==cnp::CER_SUCCESS){
+			check1=false;
+			printf("Response SUCCESS:%lu\n", logonres.get_ResponseResult());
+			}else{
+			printf("Response ERROR:%lu\n", logonres.get_ResponseResult());
+			}
+		}
+			break;
+        default:
+            break;
+		}
+  }
+			}else{
+			printf("Response ERROR:%lu\n", logoffres.get_ResponseResult());
+			}
 		}
 			break;
 		case 4:{ //TODO DEPOSIT REQUEST
@@ -250,13 +360,13 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			//Receive a reply from server
 			cnp::DEPOSIT_RESPONSE depositres;
 			cnp::DWORD dwAmount;
-			printf("Enter Amount");
+			printf("Enter Amount\n");
 			scanf("%lu",  &dwAmount);
 			cnp::DEPOSIT_TYPE wType;
-			printf("Enter Cash or  Check");
+			printf("Enter cash or  check\n");
             char choice[5];
 			scanf("%s", choice);
-			if(choice=="Cash"){
+			if(choice=="cash"){
                     wType=cnp::DT_CASH;
 			}else{
 			    wType=cnp::DT_CHECK;
@@ -276,6 +386,11 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 				//TODO error CNP_MESSAGE
 			}
 			printf("Response:", depositres.get_ResponseResult());
+			if (depositres.get_ResponseResult()==cnp::CER_SUCCESS){
+			printf("Response SUCCESS:%lu\n", depositres.get_ResponseResult());
+			}else{
+			printf("Response ERROR:%lu\n", depositres.get_ResponseResult());
+			}
 		}
 			break;
 		case 5:{ //TODO WITHDRAW REQUEST
@@ -285,7 +400,7 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			cnp::WITHDRAWAL_RESPONSE withdrawalres;
 			cnp::WORD wClientID5=connectres.get_ClientID();
 			cnp::DWORD dwAmount2;
-			printf("Enter withdraw amount");
+			printf("Enter withdraw amount\n");
 			scanf("%lu", &dwAmount2);
 			cnp::WITHDRAWAL_REQUEST withdrawalreq(wClientID5,dwAmount2,0);
 			cnp::DWORD msg5=withdrawalreq.get_MsgType();
@@ -299,6 +414,11 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 				//TODO error CNP_MESSAGE
 			}
 			printf("Response:", withdrawalres.get_ResponseResult());
+			if (withdrawalres.get_ResponseResult()==cnp::CER_SUCCESS){
+			printf("Response SUCCESS:%lu\n", withdrawalres.get_ResponseResult());
+			}else{
+			printf("Response ERROR:%lu\n", withdrawalres.get_ResponseResult());
+			}
 		}
 			break;
 		case 6:{//TODO STAMP PURCHASE REQUEST
@@ -308,7 +428,7 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			//Receive a reply from server
 			cnp::STAMP_PURCHASE_RESPONSE stampres;
 			cnp::DWORD dwAmount3;
-			printf("Enter number of stamps");
+			printf("Enter number of stamps\n");
 			scanf("%lu", &dwAmount3);
 			cnp::STAMP_PURCHASE_REQUEST stampreq(wClientID6,dwAmount3,0);
 			cnp::DWORD msg6=stampreq.get_MsgType();
@@ -329,7 +449,7 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 		   // cnp::BALANCE_QUERY_REQUEST balancereq;
 			//Receive a reply from server
 			cnp::BALANCE_QUERY_RESPONSE balanceres;
-		    printf(" Balance request processing...");
+		    printf(" Balance request processing...\n");
 		    cnp::WORD wClientID7= connectres.get_ClientID();//getclientID for sending
 		     cnp::BALANCE_QUERY_REQUEST balancereq(wClientID7,0);
 		     cnp::DWORD msg7=balancereq.get_MsgType();
@@ -352,10 +472,10 @@ printf("-----\n");// TODO CONNECT_RESPONSE header
 			//Receive a reply from server
 			cnp::TRANSACTION_QUERY_RESPONSE transactionres;
             cnp::DWORD dwStartID2;
-            printf("Start ID");
+            printf("Start ID\n");
             scanf("%lu",&dwStartID2);
             cnp::WORD wTransactionCount;
-            printf("number of transactions");
+            printf("number of transactions\n");
             scanf("%hu",&wTransactionCount);
             cnp::TRANSACTION_QUERY_REQUEST transactionreq(wClientID8,dwStartID2,wTransactionCount,0);
             cnp::DWORD msg8=transactionreq.get_MsgType();

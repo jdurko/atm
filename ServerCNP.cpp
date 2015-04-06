@@ -1,5 +1,3 @@
-//test edit
-
 //#include "stdafx.h"
 #include <stdlib.h>
 #include "DataMap.h"
@@ -16,7 +14,7 @@
 #include <unistd.h>
 #define BACKLOG	10
 #define BUF_SIZE	1024
-#define LISTEN_PORT	8000
+#define LISTEN_PORT 8000
 int threadCount = BACKLOG;
 void *client_handler(void *arg);
 int main(int argc, char *argv[]) {
@@ -195,47 +193,58 @@ printf("TEXT %d \n",text);
 
 			// accountreq::m_Request=mdhead.m_Response;
 			//TODO GET ClinetID
-			cnp::WORD wClientID = accountreq.get_ClientID();
-			const char * szFirstName = accountreq.get_FirstName();// TODO First Name
-			const char * szLastName = accountreq.get_LastName();// TODO Last Name
+			cnp::WORD wClientID1 = accountreq.get_ClientID();
+			const char * szFirstName1 = accountreq.get_FirstName();// TODO First Name
+			const char * szLastName1 = accountreq.get_LastName();// TODO Last Name
 			const char * szEmailAddress = accountreq.get_EmailAddress(); // TODO Email Address
-			cnp::WORD wPin = accountreq.get_PIN(); // TODO PIN NUMBER
+			cnp::WORD wPin1 = accountreq.get_PIN(); // TODO PIN NUMBER
 			cnp::DWORD dwSSN = accountreq.get_SSNumber();// TODO SOCIAL SECURITY
 			cnp::DWORD dwDLN = accountreq.get_DLNumber(); // TODO Driver Licence
-printf("FirstName %d \n", *szFirstName);
-printf("ClientID %d \n",wClientID);
+printf("FirstName %d \n", *szFirstName1);
+printf("ClientID %d \n",wClientID1);
 printf("SSN %lu \n",dwSSN);
 			//TODO CREATE IN FILE DATABASE
-            CustomerRecord custRec1(threadCount,szFirstName , szLastName, szEmailAddress, wPin, dwSSN,dwDLN);//create record
-           printf("CUST RECORD %s  \n", custRec1.m_szFirstName);
-            char  str[32];
-            strcat (str, szFirstName);
+            CustomerRecord custRec1(threadCount,szFirstName1 , szLastName1, szEmailAddress, wPin1, dwSSN,dwDLN);//create record
+  //         printf("CUST RECORD %s  \n", custRec1.m_szFirstName);
+            char  * str1=new char [32];
+            strcat (str1, szFirstName1);
             //const char pin[7]=""+wPin;
-            printf("Concatenate1 %s \n",str);
+    //        printf("Concatenate1 %s \n",str1);
            // strcat (str,(const char *)wPin);
           //  printf("Concatenate2 %s \n",str);
-            g_mapCustomerRecords.insert(std::pair<DWORD, CustomerRecord> (*str, custRec1) );//insert
+  //         printf("RECORD %s \n",custRec1.m_szFirstName);
+            g_mapCustomerRecords.insert(std::pair<DWORD, CustomerRecord> (*str1, custRec1) );//insert
+
+   //          printf("MAP %s \n", g_mapCustomerRecords.find(*str1)->second.m_szFirstName);
      //       open up a file stream and write them out
 //    *note*, I would open the file in binary, unless you love parsing text.
 
-    std::ofstream of("CustomerRecords.dat", std::ios_base::binary );
-
+std::streambuf *psbuf, *backup;
+   std::ofstream filestr;
+  filestr.open ("CustomerRecord.txt");
+//backup = std::cout.rdbuf();     // back up cout's streambuf
+ psbuf = filestr.rdbuf();        // get file's streambuf
+  std::cout.rdbuf(psbuf);         // assign streambuf to cout
 //  iterate over the map
+ //printf("ok \n");
 
     for (std::map<DWORD, CustomerRecord>::iterator it = g_mapCustomerRecords.begin(); it != g_mapCustomerRecords.end(); ++it)
     {
-        of.write(reinterpret_cast<const char*>(& it->second), sizeof(CustomerRecord) );
+       std::cout << str1 << " => " << it->second.m_dwRecordID << ","<<it->second.m_szFirstName<<","<<it->second.m_szLastName<<","<<it->second.m_szEmailAddress<<","<<it->second.m_wPIN<<","<<it->second.dw_SSN<<","<<it->second.m_dwDDL<<'\n';
+
     }
 
 // close the file stream & clear our in-memory collection of records
 
-    of.close();
+    filestr.close();
+ //   printf("ok 1 \n");
     g_mapCustomerRecords.empty();
+//printf("ok 2 \n");
 
-			cnp::DWORD result;//result
-			cnp::DWORD dwSequenceNumber;//
-			wClientID=threadCount;
-			cnp::CREATE_ACCOUNT_RESPONSE accountres(result, wClientID, dwSequenceNumber, 0);
+			cnp::DWORD result=cnp::CER_SUCCESS;//result
+			cnp::DWORD dwSequenceNumber=accountreq.get_Sequence();//
+			wClientID1=threadCount;
+			cnp::CREATE_ACCOUNT_RESPONSE accountres(result, wClientID1, dwSequenceNumber, 0);
 			if (send(sock, &accountres, accountres.get_Size(), 0) < 0){
 				//TODO error  CNP_ACCONT_MESSAGE
 			}
@@ -251,39 +260,94 @@ printf("SSN %lu \n",dwSSN);
 				//ERROR_CONNECT_RESPONSE
 			}
 
-			cnp::WORD wClientID = logonreq.get_ClientID();
-			const char * szFirstName = logonreq.get_FirstName(); // TODO First Name
+			cnp::WORD wClientID2 = logonreq.get_ClientID();
+			const char * szFirstName2 = logonreq.get_FirstName(); // TODO First Name
 			cnp::WORD wPin = logonreq.get_PIN();//TODO PIN
 			//SELECT CLIENT IN DATABASE
 //  open up the file and start reading them back in
-
-    std::ifstream ifs("CustomerRecords.dat", std::ios_base::binary );
-
-    while (ifs)
-    {
-        CustomerRecord custRecord;
+ CustomerRecord custRecord;
         //custRecord.m_szFirstName=*szFirstName;
         //custRecord.m_wPIN=wPin;
-        char  str[80];
-            strcat (str, szFirstName);
-           // strcat (str,(const char *)wPin);
-        ifs.read(reinterpret_cast<char*>(& custRecord), sizeof(CustomerRecord));
-        std::map<DWORD, CustomerRecord>::iterator it;
-        if (ifs)
-           // g_mapCustomerRecords.insert( std::make_pair(custRecord.m_dwRecordID, custRecord) );
-             it = g_mapCustomerRecords.find(*str);
-        if (it != g_mapCustomerRecords.end() ){
-            printf("Not Found \n");
-            break;
-        }
+        char * str=new char[32];
+            strcat (str, szFirstName2);
+  //           printf( " pointer %d\n", *str );
+    std::ifstream ifs ("CustomerRecord.txt", std::ifstream::binary);
 
-            printf("LastName %s \n", it->second.m_szLastName);
+  // get pointer to associated buffer object
+  std::filebuf* pbuf = ifs.rdbuf();
+
+  // get file size using buffer's members
+  std::size_t size = pbuf->pubseekoff (0,ifs.end,ifs.in);
+  pbuf->pubseekpos (0,ifs.in);
+
+  // allocate memory to contain file data
+  char* buffer=new char[size];
+
+  // get file data
+  pbuf->sgetn (buffer,size);
+
+  ifs.close();
+ // const char s[2] = "-";
+// printf( " STR %s\n", str );
+ cnp::DWORD result2=cnp::CER_ERROR;//
+char *token1;
+//CustomerRecord rectemp();
+//char * se=new char[32];
+   /* get the first token */
+   token1 = strtok(buffer, " => ");
+
+   /* walk through other tokens */
+   while( token1 != NULL )
+   {
+  //    printf( " TOKEN %s\n", token1 );
+  //    printf( " TOKEN1 %d\n", *token1 );
+       // *se=*token1;
+    if (token1!=NULL){
+     // if ((int )*str==(int )*token1)
+     while (strcmp (str,token1) == 0){
+        result2=cnp::CER_SUCCESS;
+        break;
+     }
+
+   }
+      token1 = strtok(NULL, " => ");
+  //     printf( " BEFORE %s\n", token1 );
+      if (token1!=NULL){
+     // if ((int )* str==(int )*token1)
+     while (strcmp (str,token1) == 0){
+        result2=cnp::CER_SUCCESS;
+       break;
+     }
+
+
+   }
+   }
+
+//printf( "AFTER TOKEN1 %s\n", token1 );
+//printf( "AFTER STR %s\n", str );
+free(str);
+free(token1);
+
+           // strcat (str,(const char *)wPin);
+
+      //  ifs.read(reinterpret_cast<char*>(& custRecord), sizeof(CustomerRecord));
+      //  std::map<DWORD, CustomerRecord>::iterator it;
+      //  if (ifs)
+
+           // g_mapCustomerRecords.insert( std::make_pair(custRecord.m_dwRecordID, custRecord) );
+        //     it = g_mapCustomerRecords.find(*str);
+        //if (it != g_mapCustomerRecords.end() ){
+        //    printf("Not Found \n");
+        //    break;
+       // }
+
+          //  printf("LastName %s \n", it->second.m_szLastName);
         //it->second.m_dwDDL = 99999;
 
-    }
-			cnp::DWORD result;//
-			cnp::DWORD dwSequenceNumber;
-			cnp::LOGON_RESPONSE logonres(result, wClientID, dwSequenceNumber, 0);
+  //  }
+            wClientID2=wPin;
+			cnp::DWORD dwSequenceNumber2=logonreq.get_Sequence();//;
+			cnp::LOGON_RESPONSE logonres(result2, wClientID2, dwSequenceNumber2, 0);
 			if (send(sock, &logonres, logonres.get_Size(), 0) < 0){
 				//TODO error  CNP_ACCONT_MESSAGE
 			}
@@ -298,9 +362,9 @@ printf("SSN %lu \n",dwSSN);
 			//GetClientID
 			cnp::WORD wClientID = logoffreq.get_ClientID();
 			//TERMINATE CONNECTION
-			cnp::DWORD result;
-			cnp::DWORD dwSequenceNumber;
-			cnp::LOGOFF_RESPONSE logoffres(result, wClientID, dwSequenceNumber, 0);
+			cnp::DWORD result3=cnp::CER_SUCCESS;
+			cnp::DWORD dwSequenceNumber3=logoffreq.get_Sequence();
+			cnp::LOGOFF_RESPONSE logoffres(result3, wClientID, dwSequenceNumber3, 0);
 			if (send(sock, &logoffres, logoffres.get_Size(), 0) < 0){
 				//TODO error  CNP_ACCONT_MESSAGE
 			}
@@ -314,12 +378,27 @@ printf("SSN %lu \n",dwSSN);
 				//ERROR_CONNECT_RESPONSE
 			}
 			//GetClientID
-			cnp::WORD wClientID = depositreq.get_ClientID();
+			cnp::WORD wClientID4 = depositreq.get_ClientID();
 			cnp::DWORD dwAmount = depositreq.get_Amount();
 			cnp::WORD wType = depositreq.get_DepositType();
-			cnp::DWORD result;//
-			cnp::DWORD dwSequenceNumber;//
-			cnp::DEPOSIT_RESPONSE depositres(result, wClientID, dwSequenceNumber, 0);
+
+			std::streambuf *psbuf, *backup;
+   std::ofstream filestr;
+  filestr.open ("BalanceRecord.txt");
+//backup = std::cout.rdbuf();     // back up cout's streambuf
+ psbuf = filestr.rdbuf();        // get file's streambuf
+  std::cout.rdbuf(psbuf);         // assign streambuf to cout
+//  iterate over the map
+ //printf("ok \n");
+       std::cout << wClientID4 << " => " << dwAmount<< ","<<wType<<'\n';
+
+// close the file stream & clear our in-memory collection of records
+
+    filestr.close();
+    printf("ok 1 \n");
+			cnp::DWORD result4=cnp::CER_SUCCESS;//
+			cnp::DWORD dwSequenceNumber4=depositreq.get_Sequence();//
+			cnp::DEPOSIT_RESPONSE depositres(result4, wClientID4, dwSequenceNumber4, 0);
 			if (send(sock, &depositres, depositres.get_Size(), 0) < 0){
 				//TODO error  CNP_ACCONT_MESSAGE
 			}
@@ -333,11 +412,71 @@ printf("SSN %lu \n",dwSSN);
 				//ERROR_CONNECT_RESPONSE
 			}
 			//cnp::WITHDRAWAL_REQUEST withdrawalreq(strtok(NULL,buf));
-			cnp::WORD wClientID = withdrawalreq.get_ClientID();
+			cnp::WORD wClientID5 = withdrawalreq.get_ClientID();
 			cnp::DWORD dwAmount = withdrawalreq.get_Amount();
-			cnp::DWORD result;
-			cnp::DWORD dwSequenceNumber;
-			cnp::WITHDRAWAL_RESPONSE withdrawalres(result, wClientID, dwSequenceNumber, 0);
+			   char * str=new char[32];
+            strcat (str, (const char *)&wClientID5);
+           //  printf( " pointer %d\n", *str );
+    std::ifstream ifs ("CustomerRecord.txt", std::ifstream::binary);
+
+  // get pointer to associated buffer object
+  std::filebuf* pbuf = ifs.rdbuf();
+
+  // get file size using buffer's members
+  std::size_t size = pbuf->pubseekoff (0,ifs.end,ifs.in);
+  pbuf->pubseekpos (0,ifs.in);
+
+  // allocate memory to contain file data
+  char* buffer=new char[size];
+
+  // get file data
+  pbuf->sgetn (buffer,size);
+
+  ifs.close();
+ // const char s[2] = "-";
+ printf( " STR %s\n", str );
+ cnp::DWORD result5=cnp::CER_ERROR;//
+char *token1;
+//CustomerRecord rectemp();
+//char * se=new char[32];
+   /* get the first token */
+   token1 = strtok(buffer, " => ");
+
+   /* walk through other tokens */
+   while( token1 != NULL )
+   {
+      printf( " TOKEN %s\n", token1 );
+      printf( " TOKEN1 %d\n", *token1 );
+       // *se=*token1;
+    if (token1!=NULL){
+     // if ((int )*str==(int )*token1)
+     while (strcmp (str,token1) == 0){
+        result5=cnp::CER_SUCCESS;
+        break;
+     }
+
+   }
+      token1 = strtok(NULL, " => ");
+       printf( " BEFORE %s\n", token1 );
+      if (token1!=NULL){
+     // if ((int )* str==(int )*token1)
+     while (strcmp (str,token1) == 0){
+        result5=cnp::CER_SUCCESS;
+       break;
+     }
+
+
+   }
+   }
+
+//printf( "AFTER TOKEN1 %s\n", token1 );
+//printf( "AFTER STR %s\n", str );
+free(str);
+free(token1);
+
+			// result5=cnp::CER_SUCCESS;
+			cnp::DWORD dwSequenceNumber5=withdrawalreq.get_Sequence();;
+			cnp::WITHDRAWAL_RESPONSE withdrawalres(result5, wClientID5, dwSequenceNumber5, 0);
 			if (send(sock, &withdrawalres, withdrawalres.get_Size(), 0) < 0){
 				//TODO error  CNP_ACCONT_MESSAGE
 			}
@@ -351,11 +490,11 @@ printf("SSN %lu \n",dwSSN);
 			if (recv(sock, &stampreq, stampreq.get_Size(), 0) < 0){
 				//ERROR_CONNECT_RESPONSE
 			}
-			cnp::WORD wClientID = stampreq.get_ClientID();
+			cnp::WORD wClientID6 = stampreq.get_ClientID();
 			cnp::DWORD dwAmount = stampreq.get_Amount();
-			cnp::DWORD dwresult;
-			cnp::DWORD dwSequenceNumber;
-			cnp::STAMP_PURCHASE_RESPONSE stampres(dwresult, wClientID, dwSequenceNumber, 0);
+			cnp::DWORD dwresult6=cnp::CER_SUCCESS;
+			cnp::DWORD dwSequenceNumber6;
+			cnp::STAMP_PURCHASE_RESPONSE stampres(dwresult6, wClientID6, dwSequenceNumber6, 0);
 			if (send(sock, &stampres, stampres.get_Size(), 0) < 0){
 				//TODO error  CNP_ACCONT_MESSAGE
 			}
